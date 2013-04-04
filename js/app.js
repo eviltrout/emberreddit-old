@@ -66,6 +66,15 @@
       return false;
     }.property('url'),
 
+    embed: function() {
+      result = this.get('media_embed.content');
+      if (!result) return null;
+
+      result = result.replace("&lt;", "<");
+      result = result.replace("&rt;", ">");
+      return result;
+    }.property('media_embed.content'),
+
     imageUrl: function() {
       var url = this.get('url');
       if (!url) return false;
@@ -100,22 +109,8 @@
 
   EmberReddit.SubredditController = Ember.ObjectController.extend({});
 
-
   EmberReddit.LinkView = Ember.View.extend({
     classNames: ['link-view'],
-
-    didInsertElement: function() {
-      $('body').on('click.close-reddit-link', function (e) {
-        var $target = $(e.target);
-      });
-
-      var $linkView = $('#link-view');
-      console.log($('#link-view'));
-    },
-
-    willDestroy: function() {
-      $('body').off('click.close-reddit-link');
-    }
   });
 
   // Routes below
@@ -123,6 +118,10 @@
     this.resource("subreddit", { path: "/r/:subreddit_id" }, function() {
       this.resource('link', { path: '/:link_id'} );
     });
+  });
+
+  EmberReddit.LinkController = Ember.ObjectController.extend({
+    needs: ['subreddit']
   });
 
   EmberReddit.LinkRoute = Ember.Route.extend({
@@ -169,7 +168,5 @@
       this.transitionTo('subreddit', EmberReddit.Subreddit.find(defaultSubreddits[0]));
     }
   });
-
-
 
 })();

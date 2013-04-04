@@ -33,13 +33,19 @@ ul.dropdown-menu a.active:hover {
 
 .link-view {
   position: fixed;
-  top: 20px;
+  top: 70px;
   width: 800px;
   height: 400px;
   background-color: white;
   padding: 10px 20px;
-  z-index: 2000;
+  z-index: 100;
   border: 10px solid #eee;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);
+}
+
+.link-view .close {
+  float: right;
+  font-size: 15px;
 }
 
 .link-view h1 {

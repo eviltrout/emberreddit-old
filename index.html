@@ -69,10 +69,19 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="link">
+    {{#linkTo 'subreddit' controllers.subreddit.content class="close"}}close{{/linkTo}}
+    {{log content}}
     <h1>{{title}}</h1>
     {{#if image}}
       <center><img {{bindAttr src="imageUrl"}}></center>
+    {{else}}
+      {{#if embed}}
+        {{{embed}}}
+      {{/if}}
     {{/if}}
+
+
+
   </script>
 
   <script src="js/libs/jquery-1.9.1.js"></script>
