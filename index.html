@@ -3,33 +3,83 @@
 <head>
 <meta charset=utf-8 />
 <title>Ember Reddit Example</title>
-  <link rel="stylesheet" href="css/normalize.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/emberreddit.css">
 </head>
 <body>
 
-  <script type="text/x-handlebars" data-template-name="index">
-    <div class='about'>
-      This was created for a <a href="http://eviltrout.com/2013/03/23/ember-without-data.html">tutorial on Ember.js</a>.
-      The source code is on <a href='https://github.com/eviltrout/emberreddit'>Github</a>.
+  <script type='text/x-handlebars' data-template-name="application">
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          </a>
+          {{#linkTo 'index' class="brand"}}emberreddit{{/linkTo}}
+
+          <div class="nav-collapse collapse" id="main-menu">
+            <ul class="nav" id="main-menu-left">
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">subreddits <b class="caret"></b></a>
+              <ul class="dropdown-menu" id="swatch-menu">
+                {{#each subreddit in subreddits}}
+                  <li>{{#linkTo 'subreddit' subreddit}}{{subreddit.title}}{{/linkTo}}</li>
+                {{/each}}
+              </ul>
+            </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <h2>Links from /r/aww</h2>
-    <ul>
-    {{#each link in content}}
-        <li>
-          {{#if link.thumbnailUrl}}
-            <img {{bindAttr src="link.thumbnailUrl"}}>
-          {{/if}}
-          <a {{bindAttr href="link.url"}} target="_blank">{{link.title}}</a>
-        </li>
-    {{/each}}
-    </ul>
+     <div class="container">
+      {{outlet}}
+     </div>
+   </script>
+
+  <script type="text/x-handlebars" data-template-name="subreddit">
+    <h2 class='subreddit'>{{title}}</h2>
+
+    {{outlet}}
+
+    {{#if loaded}}
+      <section class='reddit-links'>
+        {{#each link in links}}
+          <div class='row reddit-link'>
+            {{#if link.thumbnailUrl}}
+              <div class="span1">
+                {{#linkTo 'link' link}}<img {{bindAttr src="link.thumbnailUrl"}}>{{/linkTo}}
+              </div>
+            {{/if}}
+            <div class="span7">
+              {{#linkTo 'link' link}}{{link.title}}{{/linkTo}}
+              <span class='domain'>({{link.domain}})</span>
+            </div>
+          </div>
+        {{/each}}
+      </section>
+
+    {{else}}
+      Loading...
+    {{/if}}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="link">
+    <h1>{{title}}</h1>
+
+    {{#if image}}
+      <img src="{{unbound url}}">
+    {{/if}}
   </script>
 
   <script src="js/libs/jquery-1.9.1.js"></script>
   <script src="js/libs/handlebars-1.0.0-rc.3.js"></script>
   <script src="js/libs/ember-1.0.0-rc.2.js"></script>
+  <script src="js/libs/bootstrap.min.js"></script>
   <script src="js/app.js"></script>
 
 </body>

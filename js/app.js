@@ -1,40 +1,163 @@
 // Create our Application
-App = Ember.Application.create({});
+(function () {
 
-// Our RedditLink model
-App.RedditLink = Ember.Object.extend({
+  // Default subreddits to include
+  var defaultSubreddits = [
+    'aww',
+    'ArchitecturePorn',
+    'foodporn',
+    'funny',
+    'sushi',
+    'RetroFuturism',
+    'videos'
+  ];
 
-  /*
-    It seems reddit will return the string 'default' when there's no thumbnail present.
-    This computed property will convert 'default' to null to avoid rendering a broken
-    image link.
-  */
-  thumbnailUrl: function() {
-    var thumbnail = this.get('thumbnail');
-    return (thumbnail === 'default') ? null : thumbnail;
-  }.property('thumbnail'),
+  window.EmberReddit = Ember.Application.create({});
 
-});
+  EmberReddit.Subreddit = Ember.Object.extend({
+    loaded: false,
 
-App.RedditLink.reopenClass({
+    title: function() {
+      return "/r/" + this.get('id');
+    }.property('id'),
 
-  /* Use the Reddit JSON API to retrieve a list of links within a subreddit. Returns
-     a promise that will resolve to an array of `App.RedditLink` objects */
-  findAll: function(subreddit) {
-    return $.getJSON("http://www.reddit.com/r/" + subreddit + "/.json?jsonp=?").then(function(response) {
-      var links = [];
-      response.data.children.forEach(function (child) {
-        links.push(App.RedditLink.create(child.data));
+    loadLinks: function() {
+      if (this.get('loaded')) return;
+
+      var subreddit = this;
+      $.getJSON("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?").then(function(response) {
+        var links = Em.A();
+        response.data.children.forEach(function (child) {
+          links.push(EmberReddit.Link.create(child.data));
+        });
+        subreddit.setProperties({links: links, loaded: true});
       });
-      return links;
+    }
+  });
+
+  EmberReddit.Subreddit.reopenClass({
+    store: {},
+
+    find: function(id) {
+      if (!this.store[id]) {
+        this.store[id] = EmberReddit.Subreddit.create({id: id});
+      }
+      return this.store[id];
+    }
+  });
+
+  // Our Link model
+  EmberReddit.Link = Ember.Object.extend({
+    /*
+      It seems reddit will return the string 'default' when there's no thumbnail present.
+      This computed property will convert 'default' to null to avoid rendering a broken
+      image link.
+    */
+    thumbnailUrl: function() {
+      var thumbnail = this.get('thumbnail');
+      return (thumbnail === 'default') ? null : thumbnail;
+    }.property('thumbnail'),
+
+    image: function() {
+      var url = this.get('url');
+      if (!url) return false;
+      return url.match(/\.(jpeg|jpg|gif|png)$/) !== null;
+    }.property('url'),
+
+    loadDetails: function() {
+
+      // If we have a name, we're already loaded
+      //if (this.get('name')) return;
+
+      var url = "http://www.reddit.com/r/" + this.get('subreddit')  + "/" + this.get('id') + "/.json?jsonp=?"
+      console.log("url: " + url);
+
+      $.getJSON(url).then(function (response) {
+        console.log('huh');
+        console.log(response);
+      });
+
+      //var url = ("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?")
+
+      /*
+      $.getJSON("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?").then(function(response) {
+        var links = Em.A();
+        response.data.children.forEach(function (child) {
+          links.push(EmberReddit.Link.create(child.data));
+        });
+        subreddit.setProperties({links: links, loaded: true});
+      }); */
+
+      console.log('load ' + this.get('id'));
+    }
+
+  });
+
+  EmberReddit.Link.reopenClass({
+    store: {},
+
+    find: function(subreddit_id, id) {
+      if (!this.store[id]) {
+        this.store[id] = EmberReddit.Link.create({id: id, subreddit: subreddit_id});
+      }
+      return this.store[id];
+    }
+  });
+
+  EmberReddit.SubredditController = Ember.ObjectController.extend({});
+
+  // Routes below
+  EmberReddit.Router.map(function() {
+    this.resource("subreddit", { path: "/r/:subreddit_id" }, function() {
+      this.resource('link', { path: '/:link_id'} );
     });
-  }
+  });
 
-});
+  EmberReddit.LinkRoute = Ember.Route.extend({
+    serialize: function(model) {
+      return {link_id: model.get('id')};
+    },
 
-// Our default route. Just show a list of the links in /r/aww
-App.IndexRoute = Ember.Route.extend({
-  model: function() {
-    return App.RedditLink.findAll('aww');
-  }
-});
+    model: function(params) {
+      return EmberReddit.Link.find(this.modelFor('subreddit').get('id'), params.link_id);
+    },
+
+    setupController: function(controller, model) {
+      model.loadDetails();
+    },
+  });
+
+  EmberReddit.SubredditRoute = Ember.Route.extend({
+    serialize: function(model) {
+      return {subreddit_id: model.get('id')};
+    },
+
+    model: function(params) {
+      return EmberReddit.Subreddit.find(params.subreddit_id);
+    },
+
+    setupController: function(controller, model) {
+      model.loadLinks();
+    },
+  });
+
+  EmberReddit.ApplicationRoute = Ember.Route.extend({
+    setupController: function(c) {
+      var subreddits = Em.A();
+      defaultSubreddits.forEach(function (id) {
+        subreddits.push(EmberReddit.Subreddit.find(id));
+      });
+      c.set('subreddits', subreddits)
+    }
+
+  });
+
+  EmberReddit.IndexRoute = Ember.Route.extend({
+    redirect: function() {
+      this.transitionTo('subreddit', EmberReddit.Subreddit.find(defaultSubreddits[0]));
+    }
+  });
+
+
+
+})();

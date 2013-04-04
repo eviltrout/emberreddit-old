@@ -1,0 +1,33 @@
+html {
+  overflow-y: scroll;
+}
+
+body {
+	margin-top: 70px;
+}
+
+h2.subreddit {
+  margin-bottom: 30px;
+}
+
+section.reddit-links {
+  margin-bottom: 100px;
+}
+
+.reddit-link {
+	margin-bottom: 10px;
+}
+
+.reddit-link .domain {
+  font-size: 10px;
+}
+
+ul.dropdown-menu a.active {
+  color: #333;
+  font-weight: bold;
+}
+
+ul.dropdown-menu a.active:hover {
+  color: white;
+}
+
