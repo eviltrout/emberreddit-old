@@ -70,9 +70,8 @@
 
   <script type="text/x-handlebars" data-template-name="link">
     <h1>{{title}}</h1>
-
     {{#if image}}
-      <img src="{{unbound url}}">
+      <center><img {{bindAttr src="imageUrl"}}></center>
     {{/if}}
   </script>
 

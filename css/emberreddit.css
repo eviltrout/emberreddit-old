@@ -31,3 +31,24 @@ ul.dropdown-menu a.active:hover {
   color: white;
 }
 
+.link-view {
+  position: fixed;
+  top: 20px;
+  width: 800px;
+  height: 400px;
+  background-color: white;
+  padding: 10px 20px;
+  z-index: 2000;
+  border: 10px solid #eee;
+}
+
+.link-view h1 {
+  font-size: 20px;
+  margin: 0 0 10px 0;
+  line-height: 23px;
+}
+
+.link-view img {
+  max-width: 750px;
+  max-height: 330px;
+}

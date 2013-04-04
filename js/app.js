@@ -61,34 +61,28 @@
     image: function() {
       var url = this.get('url');
       if (!url) return false;
-      return url.match(/\.(jpeg|jpg|gif|png)$/) !== null;
+      if (url.match(/\.(jpeg|jpg|gif|png)$/) !== null) return true;
+      if (url.match(/imgur\.com\//) !== null) return true;
+      return false;
+    }.property('url'),
+
+    imageUrl: function() {
+      var url = this.get('url');
+      if (!url) return false;
+      if (url.match(/imgur\.com\//) !== null) return url + ".jpg";
+      return url;
     }.property('url'),
 
     loadDetails: function() {
 
       // If we have a name, we're already loaded
-      //if (this.get('name')) return;
+      if (this.get('name')) return;
 
-      var url = "http://www.reddit.com/r/" + this.get('subreddit')  + "/" + this.get('id') + "/.json?jsonp=?"
-      console.log("url: " + url);
-
+      var subreddit = this;
+      var url = "http://www.reddit.com/comments/" + this.get('id') + ".json?jsonp=?";
       $.getJSON(url).then(function (response) {
-        console.log('huh');
-        console.log(response);
+        subreddit.setProperties(response[0].data.children[0].data);
       });
-
-      //var url = ("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?")
-
-      /*
-      $.getJSON("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?").then(function(response) {
-        var links = Em.A();
-        response.data.children.forEach(function (child) {
-          links.push(EmberReddit.Link.create(child.data));
-        });
-        subreddit.setProperties({links: links, loaded: true});
-      }); */
-
-      console.log('load ' + this.get('id'));
     }
 
   });
@@ -96,15 +90,33 @@
   EmberReddit.Link.reopenClass({
     store: {},
 
-    find: function(subreddit_id, id) {
+    find: function(id) {
       if (!this.store[id]) {
-        this.store[id] = EmberReddit.Link.create({id: id, subreddit: subreddit_id});
+        this.store[id] = EmberReddit.Link.create({id: id});
       }
       return this.store[id];
     }
   });
 
   EmberReddit.SubredditController = Ember.ObjectController.extend({});
+
+
+  EmberReddit.LinkView = Ember.View.extend({
+    classNames: ['link-view'],
+
+    didInsertElement: function() {
+      $('body').on('click.close-reddit-link', function (e) {
+        var $target = $(e.target);
+      });
+
+      var $linkView = $('#link-view');
+      console.log($('#link-view'));
+    },
+
+    willDestroy: function() {
+      $('body').off('click.close-reddit-link');
+    }
+  });
 
   // Routes below
   EmberReddit.Router.map(function() {
@@ -119,7 +131,7 @@
     },
 
     model: function(params) {
-      return EmberReddit.Link.find(this.modelFor('subreddit').get('id'), params.link_id);
+      return EmberReddit.Link.find(params.link_id);
     },
 
     setupController: function(controller, model) {
