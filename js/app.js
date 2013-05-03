@@ -71,7 +71,7 @@
       if (!result) return null;
 
       result = result.replace("&lt;", "<");
-      result = result.replace("&rt;", ">");
+      result = result.replace("&gt;", ">");
       return result;
     }.property('media_embed.content'),
 
