@@ -43,42 +43,37 @@
 
   <script type="text/x-handlebars" data-template-name="subreddit">
     <h2 class='subreddit'>{{title}}</h2>
-
     {{outlet}}
 
-    {{#if loaded}}
-      <section class='reddit-links'>
-        {{#each link in links}}
-          <div class='row reddit-link'>
-            {{#if link.thumbnailUrl}}
-              <div class="span1">
-                {{#linkTo 'link' link}}<img {{bindAttr src="link.thumbnailUrl"}}>{{/linkTo}}
-              </div>
-            {{/if}}
-            <div class="span7">
-              {{#linkTo 'link' link}}{{link.title}}{{/linkTo}}
-              <span class='domain'>({{link.domain}})</span>
+    <section class='reddit-links'>
+      {{#each link in links}}
+        <div class='row reddit-link'>
+          {{#if link.thumbnailUrl}}
+            <div class="span1">
+              {{#linkTo 'link' link}}<img {{bindAttr src="link.thumbnailUrl"}}>{{/linkTo}}
             </div>
+          {{/if}}
+          <div class="span7">
+            {{#linkTo 'link' link}}{{link.title}}{{/linkTo}}
+            <span class='domain'>({{link.domain}})</span>
           </div>
-        {{/each}}
-      </section>
-
-    {{else}}
-      Loading...
-    {{/if}}
+        </div>
+      {{/each}}
+    </section>
   </script>
 
   <script type="text/x-handlebars" data-template-name="link">
-    {{#linkTo 'subreddit' controllers.subreddit.content class="close"}}close{{/linkTo}}
-    {{log content}}
-    <h1>{{title}}</h1>
-    {{#if image}}
-      <center><img {{bindAttr src="imageUrl"}}></center>
-    {{else}}
-      {{#if embed}}
-        {{{embed}}}
+    <div class='link-view'>
+      {{#linkTo 'subreddit' model.subreddit class="close"}}close{{/linkTo}}
+      <h1>{{title}}</h1>
+      {{#if image}}
+        <center><img {{bindAttr src="imageUrl"}}></center>
+      {{else}}
+        {{#if embed}}
+          {{{embed}}}
+        {{/if}}
       {{/if}}
-    {{/if}}
+    </div>
   </script>
 
   <script src="js/libs/jquery-1.9.1.js"></script>

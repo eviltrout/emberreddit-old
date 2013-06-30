@@ -8,61 +8,109 @@
     'foodporn',
     'funny',
     'sushi',
-    'RetroFuturism',
     'videos'
   ];
 
   window.EmberReddit = Ember.Application.create({});
 
   EmberReddit.Subreddit = Ember.Object.extend({
-    loaded: false,
+    loadedLinks: false,
 
     title: function() {
       return "/r/" + this.get('id');
     }.property('id'),
 
-    loadLinks: function() {
-      if (this.get('loaded')) return;
+    /*
+      Load the links associated with this subreddit.
 
+      It returns a promise that will resolve to be the list of links from reddit. A special case is that
+      if we've already loaded the links, we resolve to that right away rather than loading them a second
+      time.
+    */
+    loadLinks: function() {
       var subreddit = this;
-      $.getJSON("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?").then(function(response) {
-        var links = Em.A();
-        response.data.children.forEach(function (child) {
-          links.pushObject(EmberReddit.Link.create(child.data));
-        });
-        subreddit.setProperties({links: links, loaded: true});
+      return Em.Deferred.promise(function (p) {
+
+        if (subreddit.get('loadedLinks')) {
+          // We've already loaded the links, let's return them!
+          p.resolve(subreddit.get('links'));
+        } else {
+
+          // If we haven't loaded the links, load them via JSON
+          p.resolve($.getJSON("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?").then(function(response) {
+            var links = Em.A();
+            response.data.children.forEach(function (child) {
+              child.data.subreddit = subreddit;
+              links.pushObject(EmberReddit.Link.create(child.data));
+            });
+            subreddit.setProperties({links: links, loadedLinks: true});
+            return links;
+          }));
+        }
+      });
+    },
+
+    findLinkById: function(id) {
+      return this.loadLinks().then(function (links) {
+        return links.findProperty('id', id);
       });
     }
+
   });
 
+  /*
+     Note: `reopenClass` sounds scary but it's pretty simple. We're just defining class level methods
+     instead of instance methods. That way we can say `EmberReddit.Subreddit.list()` to get a list of
+     subreddits.
+  */
   EmberReddit.Subreddit.reopenClass({
-    store: {},
 
-    find: function(id) {
-      if (!this.store[id]) {
-        this.store[id] = EmberReddit.Subreddit.create({id: id});
-      }
-      return this.store[id];
-    }
+    /*
+      This class method returns a list of all our subreddits. We store them in a class variable
+      so they will only be created and referenced once.
+    */
+    list: function(id) {
+      // If we've already loaded the list, return it
+      if (this._list) { return this._list; }
+
+      var list = Em.A();
+      defaultSubreddits.forEach(function (id) {
+        list.pushObject(EmberReddit.Subreddit.create({id: id}));
+      });
+
+      // Remember what we've created so we don't request it twice.
+      this._list = list;
+      return list;
+    },
+
+    /*
+      Returns the default subreddit to show if the user hasn't selected one.
+    */
+    defaultSubreddit: function() {
+      return this.list()[0];
+    },
+
   });
 
   // Our Link model
   EmberReddit.Link = Ember.Object.extend({
     /*
-      It seems reddit will return the string 'default' when there's no thumbnail present.
-      This computed property will convert 'default' to null to avoid rendering a broken
+      It seems reddit will return the string "default" or "self" when there's no thumbnail
+      present.
+
+      This computed property will convert "default" or "self" to null to avoid rendering a broken
       image link.
     */
     thumbnailUrl: function() {
       var thumbnail = this.get('thumbnail');
-      return (thumbnail === 'default') ? null : thumbnail;
+      return ((thumbnail === 'default') || (thumbnail === 'self')) ? null : thumbnail;
     }.property('thumbnail'),
 
     image: function() {
       var url = this.get('url');
-      if (!url) return false;
-      if (url.match(/\.(jpeg|jpg|gif|png)$/) !== null) return true;
-      if (url.match(/imgur\.com\//) !== null) return true;
+      if (!url) { return false; }
+      if (url.match(/\.(jpeg|jpg|gif|png)$/) !== null) { return true; }
+      if (url.match(/imgur\.com\//) !== null) { return true; }
       return false;
     }.property('url'),
 
@@ -70,9 +118,7 @@
       var result = this.get('media_embed.content');
       if (!result) return null;
 
-      result = result.replace("&lt;", "<");
-      result = result.replace("&rt;", ">");
-      return result;
+      return result.replace("&lt;", "<").replace("&rt;", ">");
     }.property('media_embed.content'),
 
     imageUrl: function() {
@@ -80,37 +126,8 @@
       if (!url) return false;
       if (url.match(/imgur\.com\//) !== null) return url + ".jpg";
       return url;
-    }.property('url'),
+    }.property('url')
 
-    loadDetails: function() {
-
-      // If we have a name, we're already loaded
-      if (this.get('name')) return;
-
-      var subreddit = this;
-      var url = "http://www.reddit.com/comments/" + this.get('id') + ".json?jsonp=?";
-      $.getJSON(url).then(function (response) {
-        subreddit.setProperties(response[0].data.children[0].data);
-      });
-    }
-
-  });
-
-  EmberReddit.Link.reopenClass({
-    store: {},
-
-    find: function(id) {
-      if (!this.store[id]) {
-        this.store[id] = EmberReddit.Link.create({id: id});
-      }
-      return this.store[id];
-    }
-  });
-
-  EmberReddit.SubredditController = Ember.ObjectController.extend({});
-
-  EmberReddit.LinkView = Ember.View.extend({
-    classNames: ['link-view'],
   });
 
   // Routes below
@@ -120,54 +137,31 @@
     });
   });
 
-  EmberReddit.LinkController = Ember.ObjectController.extend({
-    needs: 'subreddit'
-  });
-
   EmberReddit.LinkRoute = Ember.Route.extend({
-    serialize: function(model) {
-      return {link_id: model.get('id')};
-    },
-
     model: function(params) {
-      return EmberReddit.Link.find(params.link_id);
-    },
-
-    setupController: function(controller, model) {
-      controller.set('model', model);
-      model.loadDetails();
-    },
+      return this.modelFor('subreddit').findLinkById(params.link_id);
+    }
   });
 
   EmberReddit.SubredditRoute = Ember.Route.extend({
-    serialize: function(model) {
-      return {subreddit_id: model.get('id')};
-    },
-
     model: function(params) {
-      return EmberReddit.Subreddit.find(params.subreddit_id);
+      return EmberReddit.Subreddit.list().findProperty('id', params.subreddit_id);
     },
 
-    setupController: function(controller, model) {
-      controller.set('model', model);
-      model.loadLinks();
-    },
+    afterModel: function(model) {
+      return model.loadLinks();
+    }
   });
 
   EmberReddit.ApplicationRoute = Ember.Route.extend({
-    setupController: function(c) {
-      var subreddits = Em.A();
-      defaultSubreddits.forEach(function (id) {
-        subreddits.pushObject(EmberReddit.Subreddit.find(id));
-      });
-      c.set('subreddits', subreddits)
+    setupController: function(applicationController) {
+      applicationController.set('subreddits', EmberReddit.Subreddit.list());
     }
-
   });
 
   EmberReddit.IndexRoute = Ember.Route.extend({
     redirect: function() {
-      this.transitionTo('subreddit', EmberReddit.Subreddit.find(defaultSubreddits[0]));
+      this.transitionTo('subreddit', EmberReddit.Subreddit.defaultSubreddit());
     }
   });
 
