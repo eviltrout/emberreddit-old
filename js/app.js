@@ -28,7 +28,7 @@
       $.getJSON("http://www.reddit.com/r/" + subreddit.get('id') + "/.json?jsonp=?").then(function(response) {
         var links = Em.A();
         response.data.children.forEach(function (child) {
-          links.push(EmberReddit.Link.create(child.data));
+          links.pushObject(EmberReddit.Link.create(child.data));
         });
         subreddit.setProperties({links: links, loaded: true});
       });
@@ -67,7 +67,7 @@
     }.property('url'),
 
     embed: function() {
-      result = this.get('media_embed.content');
+      var result = this.get('media_embed.content');
       if (!result) return null;
 
       result = result.replace("&lt;", "<");
@@ -121,7 +121,7 @@
   });
 
   EmberReddit.LinkController = Ember.ObjectController.extend({
-    needs: ['subreddit']
+    needs: 'subreddit'
   });
 
   EmberReddit.LinkRoute = Ember.Route.extend({
@@ -134,6 +134,7 @@
     },
 
     setupController: function(controller, model) {
+      controller.set('model', model);
       model.loadDetails();
     },
   });
@@ -148,6 +149,7 @@
     },
 
     setupController: function(controller, model) {
+      controller.set('model', model);
       model.loadLinks();
     },
   });
@@ -156,7 +158,7 @@
     setupController: function(c) {
       var subreddits = Em.A();
       defaultSubreddits.forEach(function (id) {
-        subreddits.push(EmberReddit.Subreddit.find(id));
+        subreddits.pushObject(EmberReddit.Subreddit.find(id));
       });
       c.set('subreddits', subreddits)
     }
