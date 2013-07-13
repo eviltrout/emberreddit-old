@@ -118,7 +118,7 @@
       var result = this.get('media_embed.content');
       if (!result) return null;
 
-      return result.replace("&lt;", "<").replace("&rt;", ">");
+      return result.replace(/&lt;/g,'<').replace(/&gt;/g,'>');
     }.property('media_embed.content'),
 
     imageUrl: function() {
