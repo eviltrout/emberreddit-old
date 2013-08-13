@@ -88,7 +88,7 @@
     */
     defaultSubreddit: function() {
       return this.list()[0];
-    },
+    }
 
   });
 
@@ -150,6 +150,20 @@
 
     afterModel: function(model) {
       return model.loadLinks();
+    }
+  });
+
+  EmberReddit.ApplicationView = Ember.View.extend({
+    didInsertElement: function() {
+        var controller = this.get('controller');
+        // Attach the `keyup` event to the body element, to transition back to the subreddit's index
+        // when the escape key is pressed.
+        $('body').on('keyup', function(event) {
+            if (event.keyCode !== 27) {
+                return;
+            }
+            controller.transitionToRoute('subreddit');
+        });
     }
   });
 
