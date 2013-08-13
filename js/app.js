@@ -153,6 +153,20 @@
     }
   });
 
+  EmberReddit.ApplicationView = Ember.View.extend({
+    didInsertElement: function() {
+        var controller = this.get('controller');
+        // Attach the `keyup` event to the body element, to transition back to the subreddit's index
+        // when the escape key is pressed.
+        $('body').on('keyup', function(event) {
+            if (event.keyCode !== 27) {
+                return;
+            }
+            controller.transitionToRoute('subreddit');
+        });
+    }
+  });
+
   EmberReddit.ApplicationRoute = Ember.Route.extend({
     setupController: function(applicationController) {
       applicationController.set('subreddits', EmberReddit.Subreddit.list());
