@@ -34,8 +34,8 @@ ul.dropdown-menu a.active:hover {
 .link-view {
   position: fixed;
   top: 70px;
-  width: 800px;
-  height: 400px;
+  width: 600px;
+  height: 500px;
   background-color: white;
   padding: 10px 20px;
   z-index: 100;
