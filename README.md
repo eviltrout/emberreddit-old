@@ -6,6 +6,7 @@ This was created for a [tutorial blog post](http://eviltrout.com/2013/03/23/embe
 
 [Try it in your browser](http://emberreddit.eviltrout.com/).
 
+Also see: https://github.com/eviltrout/emberreddit
 
 ### MIT License
 
