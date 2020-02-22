@@ -1,3 +1,5 @@
+Trivial edit
+
 ### emberreddit
 
 A small example of how to use Ember.js without using Ember Data.
